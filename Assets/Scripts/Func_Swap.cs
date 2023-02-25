@@ -8,17 +8,21 @@ public class Func_Swap : MonoBehaviour
     //찍은 위치를 기준으로 X 모양에서 어느 범위로 이동하는지 체크하는 로직 작성 필요
 
     [SerializeField] private bool canTouch = true; //외부에서 탐색 알고리즘과 생성 및 블록파괴가 다끝난후 호출되어 트루가 된다.
+    [SerializeField] private bool isDrag =false;
+    [SerializeField] private bool moving = false;
     [SerializeField] private GameObject myBlock = null;
     [SerializeField] private GameObject swapblock = null;
+    [SerializeField] private Func_Match match = null;
     [SerializeField] private Map_Information mapInfo = null;
 
     private Vector2 initialPosition;
-    private bool isDrag;
     private BlockPos initPos;
     private Block[,] blocks;
+
     private void Awake()
     {
         mapInfo = FindObjectOfType<Map_Information>();
+        match = FindObjectOfType<Func_Match>();
     }
     private void Start()
     {
@@ -51,7 +55,7 @@ public class Func_Swap : MonoBehaviour
             float posY = mousePosition.y - initialPosition.y;
             float tan = posY / posX; //위치에 따른 tan값
 
-            if (Vector3.Distance (initialPosition ,mousePosition)>0.2f)
+            if (Vector3.Distance(initialPosition, mousePosition) > 0.3f)
             {
                 canTouch = false;
 
@@ -89,29 +93,88 @@ public class Func_Swap : MonoBehaviour
                 }
                 //드래그 상태가 아님을 알림 => sweet load에서는 실질적인 드래그가 아니고 방향을 지정한 순간 드래그는 종료임
                 isDrag = false;
-            }         
+            }
         }
     }
     public void SwapBlock(BlockPos pos, Direction dir)
     {
         Block temp;
+        BlockPos newPos = pos;
+        MatchList matchList = new MatchList();
+        MatchList matchList2 = new MatchList();
+        moving = true;
         switch (dir)
         {
             case Direction.Up:
+                newPos.y = pos.y - 1;
                 if (blocks[pos.y - 1, pos.x] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
+                    //match.FindAllMatchBlock(blocks, pos.x, pos.y); //BFS탐색시 사용, pos에 newPos사용 
+
                     //맵에서 오브젝트 이동
                     StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y - 1, pos.x].gameObject));
+
                     //자신이 변경될 포지션값 넣어주기 
                     blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y - 1);
                     blocks[pos.y - 1, pos.x].SetBlockPos(pos.x, pos.y);
+
                     //맵에서의 정보 교환
                     temp = blocks[pos.y, pos.x];
                     blocks[pos.y, pos.x] = blocks[pos.y - 1, pos.x];
                     blocks[pos.y - 1, pos.x] = temp;
+
+                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    //옮겨서 터트릴게 없다면 다시 돌아옴
+                    //가로 세로 같은 색의 블록이 3보다 작은 경우
+                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
+                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    {
+                        //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
+                        if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
+                            (matchList2.tempColumnBlockPosition != matchList2.tempRawBlockPosition))
+                        {
+                            //블럭 제자리 복귀
+                            StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
+
+                            //자신이 변경될 포지션값 넣어주기 
+                            blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y - 1);
+                            blocks[pos.y - 1, pos.x].SetBlockPos(pos.x, pos.y);
+
+                            //맵에서의 정보 교환
+                            temp = blocks[pos.y, pos.x];
+                            blocks[pos.y, pos.x] = blocks[pos.y - 1, pos.x];
+                            blocks[pos.y - 1, pos.x] = temp;
+                        }
+                    }
                 }
+                #region 매치리스트 확인용 디버그
+                /*      Debug.Log("가로줄 카운트 : " + matchList.sameRawBlockPosition.Count);
+                      for (int i = 0; i < matchList.sameRawBlockPosition.Count; i++)
+                      {
+                          Debug.Log("가로줄 x : " + matchList.sameRawBlockPosition[i][0] + ",  가로줄 y : " + matchList.sameRawBlockPosition[i][1]);
+                      }
+                      Debug.Log("세로줄 카운트 : " + matchList.sameColumnBlockPosition.Count);
+                      for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
+                      {
+                          Debug.Log("세로줄 x : " + matchList.sameColumnBlockPosition[i][0] + ",  세로줄 y : " + matchList.sameColumnBlockPosition[i][1]);
+                      }
+                      Debug.Log("가로줄 임시 카운트 : " + matchList.TempRawBlockPosition.Count);
+                      for (int i = 0; i < matchList.TempRawBlockPosition.Count; i++)
+                      {
+                          Debug.Log("가로줄 임시 x : " + matchList.TempRawBlockPosition[i][0] + ",  가로줄 y : " + matchList.TempRawBlockPosition[i][1]);
+                      }
+                      Debug.Log("세로줄 임시 카운트 : " + matchList.TempColumnBlockPosition.Count);
+                      for (int i = 0; i < matchList.TempColumnBlockPosition.Count; i++)
+                      {
+                          Debug.Log("세로줄 임시 x : " + matchList.TempColumnBlockPosition[i][0] + ",  세로줄 y : " + matchList.TempColumnBlockPosition[i][1]);
+                      }*/
+                #endregion
+                else
+                    canTouch = true;
                 break;
             case Direction.Down:
+                newPos.y = pos.y + 1;
                 if (blocks[pos.y + 1, pos.x] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
                     //맵에서 오브젝트 이동
@@ -124,11 +187,40 @@ public class Func_Swap : MonoBehaviour
                     temp = blocks[pos.y, pos.x];
                     blocks[pos.y, pos.x] = blocks[pos.y + 1, pos.x];
                     blocks[pos.y + 1, pos.x] = temp;
+
+                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    //옮겨서 터트릴게 없다면 다시 돌아옴
+                    //가로 세로 같은 색의 블록이 3보다 작은 경우
+                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
+                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    {
+                        //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
+                        if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
+                            (matchList2.tempColumnBlockPosition != matchList2.tempRawBlockPosition))
+                        {
+                            //맵에서 오브젝트 이동
+                            StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
+
+
+                            //자신이 변경될 포지션값 넣어주기 
+                            blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y + 1);
+                            blocks[pos.y + 1, pos.x].SetBlockPos(pos.x, pos.y);
+                            //맵에서의 정보 교환
+                            temp = blocks[pos.y, pos.x];
+                            blocks[pos.y, pos.x] = blocks[pos.y + 1, pos.x];
+                            blocks[pos.y + 1, pos.x] = temp;
+                        }
+                    }
                 }
+                else
+                    canTouch = true;
                 break;
             case Direction.Left:
+                newPos.x = pos.x - 1;
                 if (blocks[pos.y, pos.x - 1] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
+
                     //맵에서 오브젝트 이동
                     StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y, pos.x - 1].gameObject));
 
@@ -139,9 +231,39 @@ public class Func_Swap : MonoBehaviour
                     temp = blocks[pos.y, pos.x];
                     blocks[pos.y, pos.x] = blocks[pos.y, pos.x - 1];
                     blocks[pos.y, pos.x - 1] = temp;
+
+                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    //옮겨서 터트릴게 없다면 다시 돌아옴
+                    //가로 세로 같은 색의 블록이 3보다 작은 경우
+                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
+                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    {
+                        //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
+                        if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
+                            (matchList2.tempColumnBlockPosition != matchList2.tempRawBlockPosition))
+                        {
+                            StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
+                            Debug.Log("복귀");
+
+
+                            //자신이 변경될 포지션값 넣어주기 
+                            blocks[pos.y, pos.x].SetBlockPos(pos.x - 1, pos.y);
+                            blocks[pos.y, pos.x - 1].SetBlockPos(pos.x, pos.y);
+                            //맵에서의 정보 교환
+                            temp = blocks[pos.y, pos.x];
+                            blocks[pos.y, pos.x] = blocks[pos.y, pos.x - 1];
+                            blocks[pos.y, pos.x - 1] = temp;
+                        }
+                        Debug.Log(matchList.tempColumnBlockPosition == matchList.tempRawBlockPosition);
+
+                    }
                 }
+                else
+                    canTouch = true;
                 break;
             case Direction.Right:
+                newPos.x = pos.x + 1;
                 if (blocks[pos.y, pos.x + 1] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
                     //맵에서 오브젝트 이동
@@ -153,11 +275,61 @@ public class Func_Swap : MonoBehaviour
                     temp = blocks[pos.y, pos.x];
                     blocks[pos.y, pos.x] = blocks[pos.y, pos.x + 1];
                     blocks[pos.y, pos.x + 1] = temp;
+
+                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    //옮겨서 터트릴게 없다면 다시 돌아옴
+                    //가로 세로 같은 색의 블록이 3보다 작은 경우
+                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
+                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    {
+                        //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
+                        if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
+                            (matchList2.tempColumnBlockPosition != matchList2.tempRawBlockPosition))
+                        {
+                            //맵에서 오브젝트 이동
+                            StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
+
+                            //자신이 변경될 포지션값 넣어주기 
+                            blocks[pos.y, pos.x].SetBlockPos(pos.x + 1, pos.y);
+                            blocks[pos.y, pos.x + 1].SetBlockPos(pos.x, pos.y);
+                            //맵에서의 정보 교환
+                            temp = blocks[pos.y, pos.x];
+                            blocks[pos.y, pos.x] = blocks[pos.y, pos.x + 1];
+                            blocks[pos.y, pos.x + 1] = temp;
+                        }
+                    }
                 }
+                else
+                    canTouch = true;
                 break;
             default:
                 break;
         }
+
+
+        //매치드 리스트 하나로 합치기
+        //
+
+        //삭제하는 로직
+        //StartCoroutine(Co_WaitGetScore(matchList, matchList2));
+        //스왑후 정보 게임 매니저에 넘기기
+        List<int[]> newList = SumMatchedList(matchList.matchedBlockPostion, matchList2.matchedBlockPostion);
+        GameManager.Instance.SendSwapInfo(blocks, newList);
+    }
+    private List<int[]> SumMatchedList(List<int[]> list1, List<int[]> list2)
+    {
+        List<int[]> sumList = new List<int[]>();
+        foreach (int[] pos in list1)
+        {
+            sumList.Add(pos);
+        }
+        foreach (int[] pos in list2)
+        {
+            sumList.Add(pos);
+        }
+
+        return sumList;
     }
 
     IEnumerator SwapBlockPos(GameObject block1, GameObject block2)
@@ -165,7 +337,7 @@ public class Func_Swap : MonoBehaviour
         //시작위치와 도착위치 지정
         Vector3 startPos1 = block1.transform.position, startPos2 = block2.transform.position;
         Vector3 endPos1 = startPos2, endPos2 = startPos1;
-        //지정 시간안데 도달하게 하기위한 변수 선언
+        //지정 시간안에 도달하게 하기위한 변수 선언
         float lerpTime = 0.5f;
         float curTime = 0;
 
@@ -177,6 +349,29 @@ public class Func_Swap : MonoBehaviour
             block2.transform.position = Vector3.Lerp(startPos2, endPos2, curTime / lerpTime);
             yield return null;
         }
+        block1.transform.position = endPos1;
+        block2.transform.position = endPos2;
+        moving = false;
         canTouch = true;
+    }
+    IEnumerator Co_WaitReturnToOriginPos(BlockPos starPos, BlockPos endPos)
+    {
+        yield return new WaitUntil(() => moving == false);
+        //터트릴게 없을 때 복귀하는 로직
+        moving = true;
+        StartCoroutine(SwapBlockPos(blocks[starPos.y, starPos.x].gameObject, blocks[endPos.y, endPos.x].gameObject));
+    }
+    IEnumerator Co_WaitGetScore(MatchList matchList, MatchList matchList2)
+    {
+        yield return new WaitUntil(() => moving == false);
+
+        for (int i = 0; i < matchList.matchedBlockPostion.Count; i++)
+        {
+            blocks[matchList.matchedBlockPostion[i][1], matchList.matchedBlockPostion[i][0]].gameObject.SetActive(false);
+        }
+        for (int i = 0; i < matchList2.matchedBlockPostion.Count; i++)
+        {
+            blocks[matchList2.matchedBlockPostion[i][1], matchList2.matchedBlockPostion[i][0]].gameObject.SetActive(false);
+        }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 public struct BlockPos
 {
     public int x;
-    public int y;   
+    public int y;
 }
 
 public class Block : MonoBehaviour
@@ -17,6 +17,9 @@ public class Block : MonoBehaviour
     private BlockPos blockPos = new BlockPos(); //블럭의 위치 값
     private void Awake()
     {
+
+        blockColor = new BlockColor();
+        blockMode = new BlockMode();
         mySpriteRenderer = gameObject.GetComponent<SpriteRenderer>();
     }
     public void SetBlockColor(BlockColor blockColor)
@@ -25,19 +28,19 @@ public class Block : MonoBehaviour
         {
             case BlockColor.Red:
                 mySpriteRenderer.color = Color.red;
-                blockColor = BlockColor.Red;
+                this.blockColor = BlockColor.Red;
                 break;
             case BlockColor.Green:
                 mySpriteRenderer.color = Color.green;
-                blockColor = BlockColor.Green;
+                this.blockColor = BlockColor.Green;
                 break;
             case BlockColor.Purple:
                 mySpriteRenderer.color = Color.magenta;
-                blockColor = BlockColor.Purple;
+                this.blockColor = BlockColor.Purple;
                 break;
             case BlockColor.Yellow:
                 mySpriteRenderer.color = Color.yellow;
-                blockColor = BlockColor.Yellow;
+                this.blockColor = BlockColor.Yellow;
                 break;
         }
     }
@@ -49,6 +52,14 @@ public class Block : MonoBehaviour
     {
         blockPos.x = x;
         blockPos.y = y;
+    }
+    public BlockColor GetBlockColor()
+    {
+        return blockColor;
+    }
+    public BlockMode GetBlockMode()
+    {
+        return blockMode;
     }
     public BlockPos GetBlockPos()
     {
