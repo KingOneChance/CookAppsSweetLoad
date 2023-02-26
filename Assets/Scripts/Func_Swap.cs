@@ -59,7 +59,6 @@ public class Func_Swap : MonoBehaviour
             {
                 canTouch = false;
 
-                Debug.Log("if 초기위치 : " + initialPosition + "\n현재위치 : " + posX + ", " + posY);
                 if (posY > 0 && (tan > 1 || tan < -1)) // 1사분면과 2사분면 사이 
                 {
                     // y-1 위치 블럭과 현재 블럭 위치 교체
@@ -67,29 +66,21 @@ public class Func_Swap : MonoBehaviour
                     //오브젝트 이동
                     //맵에 정보값을 알림 
                     SwapBlock(initPos, Direction.Up);
-                    Debug.Log("up");
-
                 }
                 else if (posY < 0 && (tan > 1 || tan < -1)) //3사분면과 4사분면 사이
                 {
                     // y+1 위치 블럭과 현재 블럭 위치 교체
                     SwapBlock(initPos, Direction.Down);
-                    Debug.Log("down");
-
                 }
                 else if (posX < 0 && (-1 < tan && tan < 1)) //2사분면과 3사분면 사이
                 {
                     // x+1 위치 블럭과 현재 블럭 위치 교체
                     SwapBlock(initPos, Direction.Left);
-                    Debug.Log("left");
-
                 }
                 else if (posX > 0 && (-1 < tan && tan < 1)) //1사분면과 4사분면 사이
                 {
                     // x-1 위치 블럭과 현재 블럭 위치 교체 
                     SwapBlock(initPos, Direction.Right);
-                    Debug.Log("right");
-
                 }
                 //드래그 상태가 아님을 알림 => sweet load에서는 실질적인 드래그가 아니고 방향을 지정한 순간 드래그는 종료임
                 isDrag = false;
@@ -112,7 +103,7 @@ public class Func_Swap : MonoBehaviour
                     //match.FindAllMatchBlock(blocks, pos.x, pos.y); //BFS탐색시 사용, pos에 newPos사용 
 
                     //맵에서 오브젝트 이동
-                    StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y - 1, pos.x].gameObject));
+                    StartCoroutine(Co_SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y - 1, pos.x].gameObject));
 
                     //자신이 변경될 포지션값 넣어주기 
                     blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y - 1);
@@ -178,7 +169,7 @@ public class Func_Swap : MonoBehaviour
                 if (blocks[pos.y + 1, pos.x] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
                     //맵에서 오브젝트 이동
-                    StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y + 1, pos.x].gameObject));
+                    StartCoroutine(Co_SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y + 1, pos.x].gameObject));
 
                     //자신이 변경될 포지션값 넣어주기 
                     blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y + 1);
@@ -222,7 +213,7 @@ public class Func_Swap : MonoBehaviour
                 {
 
                     //맵에서 오브젝트 이동
-                    StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y, pos.x - 1].gameObject));
+                    StartCoroutine(Co_SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y, pos.x - 1].gameObject));
 
                     //자신이 변경될 포지션값 넣어주기 
                     blocks[pos.y, pos.x].SetBlockPos(pos.x - 1, pos.y);
@@ -244,8 +235,6 @@ public class Func_Swap : MonoBehaviour
                             (matchList2.tempColumnBlockPosition != matchList2.tempRawBlockPosition))
                         {
                             StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
-                            Debug.Log("복귀");
-
 
                             //자신이 변경될 포지션값 넣어주기 
                             blocks[pos.y, pos.x].SetBlockPos(pos.x - 1, pos.y);
@@ -255,8 +244,6 @@ public class Func_Swap : MonoBehaviour
                             blocks[pos.y, pos.x] = blocks[pos.y, pos.x - 1];
                             blocks[pos.y, pos.x - 1] = temp;
                         }
-                        Debug.Log(matchList.tempColumnBlockPosition == matchList.tempRawBlockPosition);
-
                     }
                 }
                 else
@@ -267,7 +254,7 @@ public class Func_Swap : MonoBehaviour
                 if (blocks[pos.y, pos.x + 1] != null) //맨위의 벽이 아니라면 맵정보 변경
                 {
                     //맵에서 오브젝트 이동
-                    StartCoroutine(SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y, pos.x + 1].gameObject));
+                    StartCoroutine(Co_SwapBlockPos(blocks[pos.y, pos.x].gameObject, blocks[pos.y, pos.x + 1].gameObject));
                     //자신이 변경될 포지션값 넣어주기 
                     blocks[pos.y, pos.x].SetBlockPos(pos.x + 1, pos.y);
                     blocks[pos.y, pos.x + 1].SetBlockPos(pos.x, pos.y);
@@ -315,7 +302,7 @@ public class Func_Swap : MonoBehaviour
         //StartCoroutine(Co_WaitGetScore(matchList, matchList2));
         //스왑후 정보 게임 매니저에 넘기기
         List<int[]> newList = SumMatchedList(matchList.matchedBlockPostion, matchList2.matchedBlockPostion);
-        GameManager.Instance.SendSwapInfo(blocks, newList);
+        StartCoroutine(Co_SendToGameManage(newList));
     }
     private List<int[]> SumMatchedList(List<int[]> list1, List<int[]> list2)
     {
@@ -332,7 +319,7 @@ public class Func_Swap : MonoBehaviour
         return sumList;
     }
 
-    IEnumerator SwapBlockPos(GameObject block1, GameObject block2)
+    IEnumerator Co_SwapBlockPos(GameObject block1, GameObject block2)
     {
         //시작위치와 도착위치 지정
         Vector3 startPos1 = block1.transform.position, startPos2 = block2.transform.position;
@@ -359,19 +346,11 @@ public class Func_Swap : MonoBehaviour
         yield return new WaitUntil(() => moving == false);
         //터트릴게 없을 때 복귀하는 로직
         moving = true;
-        StartCoroutine(SwapBlockPos(blocks[starPos.y, starPos.x].gameObject, blocks[endPos.y, endPos.x].gameObject));
+        StartCoroutine(Co_SwapBlockPos(blocks[starPos.y, starPos.x].gameObject, blocks[endPos.y, endPos.x].gameObject));
     }
-    IEnumerator Co_WaitGetScore(MatchList matchList, MatchList matchList2)
+    IEnumerator Co_SendToGameManage(List<int[]> newList)
     {
         yield return new WaitUntil(() => moving == false);
-
-        for (int i = 0; i < matchList.matchedBlockPostion.Count; i++)
-        {
-            blocks[matchList.matchedBlockPostion[i][1], matchList.matchedBlockPostion[i][0]].gameObject.SetActive(false);
-        }
-        for (int i = 0; i < matchList2.matchedBlockPostion.Count; i++)
-        {
-            blocks[matchList2.matchedBlockPostion[i][1], matchList2.matchedBlockPostion[i][0]].gameObject.SetActive(false);
-        }
+        GameManager.Instance.SendSwapInfo(blocks, newList);
     }
 }

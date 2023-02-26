@@ -20,11 +20,13 @@ public enum BlockColor
     Green,
     Yellow,
     Purple,
+    Clear,
 }
 public enum BlockMode
 {
     Normal,
     Munchkin,
+    Empty,
 }
 public enum Direction
 {

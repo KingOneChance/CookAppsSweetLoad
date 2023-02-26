@@ -87,6 +87,10 @@ public class Func_Match : MonoBehaviour
         matchList.sameRawBlockPosition = sameRawBlockPos;
         matchList.tempRawBlockPosition = TempRawBlockPos;
 
+        //가로세로 동시에 터져야 하는 경우 하나에서 빼줘야함\
+        if(sameColumnBlockPos.Count>2 && sameRawBlockPos.Count>2)
+            sameRawBlockPos.Remove(startPos);
+
         FindMatchedBlock(blocks, matchList);
 
         return matchList;

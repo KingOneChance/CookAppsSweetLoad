@@ -101,6 +101,10 @@ public class Map_Information : MonoBehaviour
         #endregion
     }
 
+    private void Start()
+    {
+        GameManager.Instance.func_Spawn.SetInitBlockPool(blocks);
+    }
     public Block[,] GetBlocksInfo()
     {
         return blocks;
@@ -108,5 +112,9 @@ public class Map_Information : MonoBehaviour
     public void SetBlccksInfo(Block[,] blocks)
     {
         this.blocks = blocks;
+    }
+    public void PrintBlocks()
+    {
+       
     }
 }
