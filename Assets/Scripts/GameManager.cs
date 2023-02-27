@@ -50,11 +50,6 @@ public class GameManager : MonoBehaviour
         func_Spawn.SetMapBlocksInfo(blocks);
         func_Spawn.SetMatchedList(this.matchedList);
 
-        for (int i = 0; i < matchedList.Count; i++)
-        {
-            //가로 세로 모두 있을을 경우 2번 찍히는 좌표가 있음
-            Debug.Log(matchedList[i][0] + " " + matchedList[i][1]);
-        }
     }
     public void SetScore(int point)
     {

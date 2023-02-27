@@ -8,7 +8,7 @@ public class Func_Swap : MonoBehaviour
     //찍은 위치를 기준으로 X 모양에서 어느 범위로 이동하는지 체크하는 로직 작성 필요
 
     [SerializeField] private bool canTouch = true; //외부에서 탐색 알고리즘과 생성 및 블록파괴가 다끝난후 호출되어 트루가 된다.
-    [SerializeField] private bool isDrag =false;
+    [SerializeField] private bool isDrag = false;
     [SerializeField] private bool moving = false;
     [SerializeField] private GameObject myBlock = null;
     [SerializeField] private GameObject swapblock = null;
@@ -139,28 +139,6 @@ public class Func_Swap : MonoBehaviour
                         }
                     }
                 }
-                #region 매치리스트 확인용 디버그
-                /*      Debug.Log("가로줄 카운트 : " + matchList.sameRawBlockPosition.Count);
-                      for (int i = 0; i < matchList.sameRawBlockPosition.Count; i++)
-                      {
-                          Debug.Log("가로줄 x : " + matchList.sameRawBlockPosition[i][0] + ",  가로줄 y : " + matchList.sameRawBlockPosition[i][1]);
-                      }
-                      Debug.Log("세로줄 카운트 : " + matchList.sameColumnBlockPosition.Count);
-                      for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
-                      {
-                          Debug.Log("세로줄 x : " + matchList.sameColumnBlockPosition[i][0] + ",  세로줄 y : " + matchList.sameColumnBlockPosition[i][1]);
-                      }
-                      Debug.Log("가로줄 임시 카운트 : " + matchList.TempRawBlockPosition.Count);
-                      for (int i = 0; i < matchList.TempRawBlockPosition.Count; i++)
-                      {
-                          Debug.Log("가로줄 임시 x : " + matchList.TempRawBlockPosition[i][0] + ",  가로줄 y : " + matchList.TempRawBlockPosition[i][1]);
-                      }
-                      Debug.Log("세로줄 임시 카운트 : " + matchList.TempColumnBlockPosition.Count);
-                      for (int i = 0; i < matchList.TempColumnBlockPosition.Count; i++)
-                      {
-                          Debug.Log("세로줄 임시 x : " + matchList.TempColumnBlockPosition[i][0] + ",  세로줄 y : " + matchList.TempColumnBlockPosition[i][1]);
-                      }*/
-                #endregion
                 else
                     canTouch = true;
                 break;
@@ -192,7 +170,6 @@ public class Func_Swap : MonoBehaviour
                         {
                             //맵에서 오브젝트 이동
                             StartCoroutine(Co_WaitReturnToOriginPos(newPos, pos));
-
 
                             //자신이 변경될 포지션값 넣어주기 
                             blocks[pos.y, pos.x].SetBlockPos(pos.x, pos.y + 1);
@@ -293,11 +270,7 @@ public class Func_Swap : MonoBehaviour
             default:
                 break;
         }
-
-
         //매치드 리스트 하나로 합치기
-        //
-
         //삭제하는 로직
         //StartCoroutine(Co_WaitGetScore(matchList, matchList2));
         //스왑후 정보 게임 매니저에 넘기기
@@ -318,6 +291,16 @@ public class Func_Swap : MonoBehaviour
 
         return sumList;
     }
+
+    public void AutoSwapBlock(Block[,] blocks ,int x, int y )
+    {
+        MatchList matchList = match.FindDirectMatchBlock(blocks,x, y);
+        List<int[]> newList = matchList.matchedBlockPostion;
+        StartCoroutine(Co_SendToGameManage(newList));
+    }
+
+
+
 
     IEnumerator Co_SwapBlockPos(GameObject block1, GameObject block2)
     {

@@ -17,6 +17,7 @@ public class Block : MonoBehaviour
     [SerializeField] private int nowX;
     [SerializeField] private int nowY;
     private BlockPos blockPos = new BlockPos(); //블럭의 위치 값
+    [SerializeField] public bool ismoving { get; set; } //코루틴 중복 막기
     private void Awake()
     {
 
@@ -119,6 +120,7 @@ public class Block : MonoBehaviour
     }
     IEnumerator Co_MoveBlock(GameObject blockObject, int x, int y)
     {
+        ismoving = true;
         //시작위치와 도착위치 지정
         Vector3 startPos = blockObject.transform.position;
         Vector3 endPos = new Vector3(x-4,4-y,0);
@@ -136,5 +138,6 @@ public class Block : MonoBehaviour
 
         blockObject.transform.position = endPos;
         yield return null;
+        ismoving = false;
     }
 }

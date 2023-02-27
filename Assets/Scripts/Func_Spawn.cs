@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 public class Func_Spawn : MonoBehaviour
 {
-    [SerializeField] private Block blockPrefab;
+    [SerializeField] private Block blockPrefab =null;
+    [SerializeField] private Func_Swap func_swap = null;
     [SerializeField] private List<Block> spawnListPool;
     [SerializeField] private List<Block> inactiveList;
 
     private List<int[]> matchList;
     private List<int[]> newMatchList = new List<int[]>();
     private Block[,] blocks;
+    private void Awake()
+    {
+        func_swap = FindObjectOfType<Func_Swap>();
+    }
     //맵 블럭 정보 받기
     public void SetMapBlocksInfo(Block[,] blocks)
     {
@@ -56,6 +61,10 @@ public class Func_Spawn : MonoBehaviour
                 //새 매치 리스트 갱신 , 
                 newMatchList.Add(new int[] { matchedList[i][0], matchedList[i][1] });
             }
+            else
+            {
+                Debug.Log("중복됌");
+            }
         }
         //열별 최대 최소 y값 찾기위한 리스트
         List<int[]> minMax = new List<int[]>();
@@ -74,7 +83,6 @@ public class Func_Spawn : MonoBehaviour
                 }
             }
             minMax.Add(new int[] { min, max });
-            Debug.Log(minMax[i - 1][0] + " vs " + minMax[i - 1][1]);
         }
 
         //오브젝트풀 돌리기 위한 넘버링
@@ -85,42 +93,65 @@ public class Func_Spawn : MonoBehaviour
             if (minMax[i][0] == 20 || minMax[i][1] == -1) continue; //꺼진 블럭이 없을 경우 
 
             int dif = minMax[i][1] - minMax[i][0] + 1; //최대 - 최소 +1  => 최대 최소 사이 개수
-           
+
             //빈블록 윗부분을 내리는 로직
-            for (int j = minMax[i][0]; j >= 1; j--)
+            for (int j = minMax[i][0]-1; j >= 1; j--)
             {
+                if (blocks[j, i + 1].gameObject.activeSelf == false) continue;
                 blocks[j, i + 1].SetBlockPos(i + 1, j + dif); //min => max자리로 이동 dif만큼 이동했기 때문
                 blocks[j, i + 1].MoveBlock();
                 blocks[j + dif, i + 1] = blocks[j, i + 1];
             }
-            //밑으로 내리고 난 후 비어있는 윗부분 채우는 로직
-            for (int j = 1; j <= dif; j++)
+            if (dif != 1)
             {
-                blocks[j, i+1] = null;
+                //밑으로 내리고 난 후 비어있는 윗부분 채우는 로직
+                for (int j = 1; j <= dif; j++)
+                {
+                    inactiveList[inactiveCount].gameObject.SetActive(true);
+                    blocks[j, i + 1] = null;
+                    inactiveList[inactiveCount].gameObject.transform.position = new Vector2(i - 3, 4 + dif - j);
+                    inactiveList[inactiveCount].SetBlockRandomColor();
+                    inactiveList[inactiveCount].SetBlockMode(BlockMode.Normal);
+                    inactiveList[inactiveCount].SetBlockPos(i + 1, j);
+                    inactiveList[inactiveCount].MoveBlock();
+            
+                    blocks[j, i + 1] = inactiveList[inactiveCount];
+                    inactiveCount++;
+                }
+            }
+            else
+            {
                 inactiveList[inactiveCount].gameObject.SetActive(true);
-                inactiveList[inactiveCount].gameObject.transform.position = new Vector2(i-3,4+dif-j);
+                inactiveList[inactiveCount].gameObject.transform.position = new Vector2(i - 3, 4);
                 inactiveList[inactiveCount].SetBlockRandomColor();
-                inactiveList[inactiveCount].SetBlockPos(i + 1, j);
+                inactiveList[inactiveCount].SetBlockPos(i + 1, 1);
                 inactiveList[inactiveCount].SetBlockMode(BlockMode.Normal);
                 inactiveList[inactiveCount].MoveBlock();
 
-                // Debug.Log("inactiveList[inactiveCount] x , y: " + inactiveList[inactiveCount].GetBlockPosX() +" ,  " + inactiveList[inactiveCount].GetBlockPosY());
-
-                blocks[j, i+1] = inactiveList[inactiveCount];
-             
+                inactiveList[inactiveCount].gameObject.name = (i + 1).ToString();
+                blocks[1, i + 1] = inactiveList[inactiveCount];
                 inactiveCount++;
             }
         }
-        #region blocks 디버그문
-        /*for (int t = 1; t < 8; t++)
+        //StartCoroutine(Co_AutoSwap());
+    }
+    //주변에 매치 되는게 있는지 확인하는 함수 
+    IEnumerator Co_AutoSwap()
+    {
+        for(int i = 1; i < 8; i++)
         {
-            for (int y = 1; y < 8; y++)
+            for(int  j = 1; j < 8; j++)
             {
-                if (y == 1)
-                    Debug.Log("blocks  " + t + ", " + y + " 의 posx : " + blocks[t, y].GetBlockPosX() + ", posy : " + blocks[t, y].GetBlockPosY());
+                yield return new WaitUntil(() => blocks[i, j].ismoving == false); 
             }
-        }*/
-        #endregion
+        }
+        for (int i = 1; i < 8; i++)
+        {
+            for (int j = 1; j < 8; j++)
+            {
+                func_swap.AutoSwapBlock(blocks, j,i);
+            }
+        }
     }
     //리스트 안에 해당 블럭이 있는지 찾는 함수
     private bool IsContains(List<Block> list, Block block)
@@ -134,45 +165,4 @@ public class Func_Spawn : MonoBehaviour
         }
         return false;
     }
-
-    /// <summary>
-    /// 클리어된 블럭만큼 각 열에 블럭 생성하기
-    /// x = blockPos.x, y = blockPos.y
-    /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    private void CreateNewBlock(int x, int y, int count)
-    {
-
-    }
-
-    IEnumerator Co_MoveBlock(GameObject blockObject, int x, int y)
-    {
-        //시작위치와 도착위치 지정
-        Vector3 startPos = blockObject.transform.position;
-        Vector3 endPos = blockObject.transform.position + Vector3.down * (4 - y);
-        //지정 시간안에 도달하게 하기위한 변수 선언
-        float lerpTime = 0.5f;
-        float curTime = 0;
-
-        //lerp로 시작점과 끝점 움직인 선형보간
-        while (lerpTime >= curTime)
-        {
-            curTime += Time.deltaTime;
-            blockObject.transform.position = Vector3.Lerp(startPos, endPos, curTime / lerpTime);
-            yield return null;
-        }
-
-        blockObject.transform.position = endPos;
-        yield return null;
-    }
-
-
-    private bool CheckBlock(Vector3 position)
-    {
-
-        return true;
-    }
-    //생성한 블럭에게 움직임 진행시키기
-
 }
