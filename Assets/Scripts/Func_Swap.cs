@@ -10,6 +10,7 @@ public class Func_Swap : MonoBehaviour
     [SerializeField] private bool canTouch = true; //외부에서 탐색 알고리즘과 생성 및 블록파괴가 다끝난후 호출되어 트루가 된다.
     [SerializeField] private bool isDrag = false;
     [SerializeField] private bool moving = false;
+    [SerializeField] public bool gameOver = false;
     [SerializeField] private GameObject myBlock = null;
     [SerializeField] private GameObject swapblock = null;
     [SerializeField] private Func_Match match = null;
@@ -30,6 +31,7 @@ public class Func_Swap : MonoBehaviour
     }
     void Update()
     {
+        if (gameOver == true) return;
         if (canTouch == false) return;
         if (Input.GetMouseButtonDown(0))
         {

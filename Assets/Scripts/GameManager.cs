@@ -25,12 +25,14 @@ public class GameManager : MonoBehaviour
     [field: SerializeField] public Map_Information map_infomation { get; set; }
     [field: SerializeField] public Func_Spawn func_Spawn { get; set; }
     [field: SerializeField] public UiManager uiManager { get; set; }
+    [field: SerializeField] public Func_Swap func_swap { get; set; }
 
     [SerializeField] private List<int[]> matchedList = new List<int[]>();
     [SerializeField] private int score;
 
     private void Awake()
     {
+        func_swap = FindObjectOfType<Func_Swap>();
         map_infomation = FindObjectOfType<Map_Information>();
         func_Spawn = FindObjectOfType<Func_Spawn>();
         uiManager = FindObjectOfType<UiManager>();
@@ -55,5 +57,11 @@ public class GameManager : MonoBehaviour
     {
         score += point;
         uiManager.SetScoreOnUI(score);
+
+        if (score > 1000)
+        {
+            uiManager.GameOverWin();
+            func_swap.gameOver = true;
+        }
     }
 }
