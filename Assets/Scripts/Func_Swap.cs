@@ -293,17 +293,12 @@ public class Func_Swap : MonoBehaviour
 
         return sumList;
     }
-
     public void AutoSwapBlock(Block[,] blocks ,int x, int y )
     {
         MatchList matchList = match.FindDirectMatchBlock(blocks,x, y);
         List<int[]> newList = matchList.matchedBlockPostion;
         StartCoroutine(Co_SendToGameManage(newList));
     }
-
-
-
-
     IEnumerator Co_SwapBlockPos(GameObject block1, GameObject block2)
     {
         //시작위치와 도착위치 지정

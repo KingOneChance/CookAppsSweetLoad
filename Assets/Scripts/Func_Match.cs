@@ -212,7 +212,6 @@ public class Func_Match : MonoBehaviour
         }
         else return;
     }
-
     //방문 목록에 있는지 확인하는 함수  BFS로직에서 사용
     private bool VisitContains(List<int[]> visitedPos, int[] nowPos)
     {
@@ -225,7 +224,6 @@ public class Func_Match : MonoBehaviour
         }
         return false;
     }
-
     //매치된 블럭들 담아주기, 터트릴 블럭들
     public void FindMatchedBlock(Block[,] blocks, MatchList matchList)
     {
@@ -245,5 +243,34 @@ public class Func_Match : MonoBehaviour
             }
         }
         //특수 조건 블럭들 담기 
+    }
+    //자동 매치 기능
+    public void AutoMatchblock(Block[,] blocks)
+    {
+        List<int[]> sameRawBlockPos = new List<int[]>();
+        List<int[]> TempRawBlockPos = new List<int[]>();
+        List<int[]> sameColumnBlockPos = new List<int[]>();
+        List<int[]> TempColumnBlockPos = new List<int[]>();
+        MatchList matchList = new MatchList();
+        // 0 은 x 1은 y
+        int[] startPos = new int[] {};
+        for (int i = 1; i < 8; i++)
+        {
+            for(int j = 1; j < 8; j++)
+            {
+                startPos[0] = j;
+                startPos[1] = i;
+                FIndLeftRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
+                FIndRightRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
+                FIndUpColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
+                FIndDownColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
+            }
+        }
+        matchList.sameColumnBlockPosition = sameColumnBlockPos;
+        matchList.tempColumnBlockPosition = TempColumnBlockPos;
+        matchList.sameRawBlockPosition = sameRawBlockPos;
+        matchList.tempRawBlockPosition = TempRawBlockPos;
+
+        FindMatchedBlock(blocks, matchList);
     }
 }
