@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AllEnums 
+public class AllEnums
 {
-  
+
 }
 public enum TileState
 {
@@ -20,6 +20,7 @@ public enum BlockColor
     Green,
     Yellow,
     Purple,
+    MunChKin,
     Clear,
 }
 public enum BlockMode

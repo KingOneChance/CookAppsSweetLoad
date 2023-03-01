@@ -18,6 +18,7 @@ public class Map_Information : MonoBehaviour
         tileInfo = new Tile_Information[9, 9];
         blocks = new Block[9, 9];
         GameObject blockFolder = new GameObject("BlockFolder");
+        int k = 0;
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
@@ -31,7 +32,8 @@ public class Map_Information : MonoBehaviour
                 {
                     GameObject newBlock = Instantiate(blockPrefab, tileInfo[i, j].transform.position, Quaternion.identity);
                     newBlock.TryGetComponent<Block>(out blocks[i, j]);
-
+                    newBlock.name = k.ToString();
+                    k++;
                     //하이어라키 뷰 정리용도
                     newBlock.gameObject.transform.SetParent(blockFolder.transform);
 

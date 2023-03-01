@@ -13,7 +13,9 @@ public class Func_Swap : MonoBehaviour
     [SerializeField] public bool gameOver = false;
     [SerializeField] private GameObject myBlock = null;
     [SerializeField] private GameObject swapblock = null;
-    [SerializeField] private Func_Match match = null;
+    [SerializeField] private Block blockTemp = null;
+
+    [SerializeField] private Func_Match func_Match = null;
     [SerializeField] private Map_Information mapInfo = null;
 
     private Vector2 initialPosition;
@@ -23,7 +25,7 @@ public class Func_Swap : MonoBehaviour
     private void Awake()
     {
         mapInfo = FindObjectOfType<Map_Information>();
-        match = FindObjectOfType<Func_Match>();
+        func_Match = FindObjectOfType<Func_Match>();
     }
     private void Start()
     {
@@ -43,9 +45,8 @@ public class Func_Swap : MonoBehaviour
                 myBlock = hit.collider.gameObject;
                 initialPosition = hit.collider.gameObject.transform.position;
 
-                Block temp;
-                myBlock.TryGetComponent<Block>(out temp); //현재 블럭 탐색
-                initPos = temp.GetBlockPos(); //현재 블럭의 맵에서의 위치 
+                myBlock.TryGetComponent<Block>(out blockTemp); //현재 블럭 탐색
+                initPos = blockTemp.GetBlockPos(); //현재 블럭의 맵에서의 위치 
                 isDrag = true;
             }
         }
@@ -64,27 +65,39 @@ public class Func_Swap : MonoBehaviour
                 if (posY > 0 && (tan > 1 || tan < -1)) // 1사분면과 2사분면 사이 
                 {
                     // y-1 위치 블럭과 현재 블럭 위치 교체
-                    //맵정보 변경
-                    //오브젝트 이동
-                    //맵에 정보값을 알림 
-                    SwapBlock(initPos, Direction.Up);
+                    if (blockTemp.GetBlockMode() == BlockMode.Normal)
+                        SwapBlock(initPos, Direction.Up);
+                    else if (blockTemp.GetBlockMode() == BlockMode.Munchkin)
+                        SwapMunchkin(blockTemp, Direction.Up);
                 }
                 else if (posY < 0 && (tan > 1 || tan < -1)) //3사분면과 4사분면 사이
                 {
                     // y+1 위치 블럭과 현재 블럭 위치 교체
-                    SwapBlock(initPos, Direction.Down);
+                    if (blockTemp.GetBlockMode() == BlockMode.Normal)
+                        SwapBlock(initPos, Direction.Down);
+                    else if (blockTemp.GetBlockMode() == BlockMode.Munchkin)
+                        SwapMunchkin(blockTemp, Direction.Down);
+
                 }
                 else if (posX < 0 && (-1 < tan && tan < 1)) //2사분면과 3사분면 사이
                 {
                     // x+1 위치 블럭과 현재 블럭 위치 교체
-                    SwapBlock(initPos, Direction.Left);
+                    if (blockTemp.GetBlockMode() == BlockMode.Normal)
+                        SwapBlock(initPos, Direction.Left);
+                    else if (blockTemp.GetBlockMode() == BlockMode.Munchkin)
+                        SwapMunchkin(blockTemp, Direction.Left);
+
                 }
                 else if (posX > 0 && (-1 < tan && tan < 1)) //1사분면과 4사분면 사이
                 {
                     // x-1 위치 블럭과 현재 블럭 위치 교체 
-                    SwapBlock(initPos, Direction.Right);
+                    if (blockTemp.GetBlockMode() == BlockMode.Normal)
+                        SwapBlock(initPos, Direction.Right);
+                    else if (blockTemp.GetBlockMode() == BlockMode.Munchkin)
+                        SwapMunchkin(blockTemp, Direction.Right);
+
                 }
-                //드래그 상태가 아님을 알림 => sweet load에서는 실질적인 드래그가 아니고 방향을 지정한 순간 드래그는 종료임
+                //드래그 상태가 아님을 알림 => sweet load에서는 실질적인 드래그가 아니고 방향을 지정한 순간 드래그는 종료
                 isDrag = false;
             }
         }
@@ -116,12 +129,11 @@ public class Func_Swap : MonoBehaviour
                     blocks[pos.y, pos.x] = blocks[pos.y - 1, pos.x];
                     blocks[pos.y - 1, pos.x] = temp;
 
-                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
-                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    matchList = func_Match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = func_Match.FindDirectMatchBlock(blocks, pos.x, pos.y);
                     //옮겨서 터트릴게 없다면 다시 돌아옴
                     //가로 세로 같은 색의 블록이 3보다 작은 경우
-                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
-                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    if (matchList.matchedBlockPostion.Count == 0 && matchList2.matchedBlockPostion.Count == 0)
                     {
                         //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
                         if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
@@ -159,12 +171,11 @@ public class Func_Swap : MonoBehaviour
                     blocks[pos.y, pos.x] = blocks[pos.y + 1, pos.x];
                     blocks[pos.y + 1, pos.x] = temp;
 
-                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
-                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    matchList = func_Match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = func_Match.FindDirectMatchBlock(blocks, pos.x, pos.y);
                     //옮겨서 터트릴게 없다면 다시 돌아옴
                     //가로 세로 같은 색의 블록이 3보다 작은 경우
-                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
-                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    if (matchList.matchedBlockPostion.Count == 0 && matchList2.matchedBlockPostion.Count == 0)
                     {
                         //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
                         if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
@@ -202,12 +213,11 @@ public class Func_Swap : MonoBehaviour
                     blocks[pos.y, pos.x] = blocks[pos.y, pos.x - 1];
                     blocks[pos.y, pos.x - 1] = temp;
 
-                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
-                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    matchList = func_Match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = func_Match.FindDirectMatchBlock(blocks, pos.x, pos.y);
                     //옮겨서 터트릴게 없다면 다시 돌아옴
                     //가로 세로 같은 색의 블록이 3보다 작은 경우
-                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
-                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    if (matchList.matchedBlockPostion.Count == 0 && matchList2.matchedBlockPostion.Count == 0)
                     {
                         //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
                         if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
@@ -242,12 +252,11 @@ public class Func_Swap : MonoBehaviour
                     blocks[pos.y, pos.x] = blocks[pos.y, pos.x + 1];
                     blocks[pos.y, pos.x + 1] = temp;
 
-                    matchList = match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
-                    matchList2 = match.FindDirectMatchBlock(blocks, pos.x, pos.y);
+                    matchList = func_Match.FindDirectMatchBlock(blocks, newPos.x, newPos.y);
+                    matchList2 = func_Match.FindDirectMatchBlock(blocks, pos.x, pos.y);
                     //옮겨서 터트릴게 없다면 다시 돌아옴
                     //가로 세로 같은 색의 블록이 3보다 작은 경우
-                    if ((matchList.sameRawBlockPosition.Count < 3 && matchList.sameColumnBlockPosition.Count < 3) &&
-                        (matchList2.sameRawBlockPosition.Count < 3 && matchList2.sameColumnBlockPosition.Count < 3))
+                    if (matchList.matchedBlockPostion.Count == 0 && matchList2.matchedBlockPostion.Count == 0)
                     {
                         //먼치킨 블럭을 만들기 위한 리스트가 같지 않을 경우
                         if ((matchList.tempColumnBlockPosition != matchList.tempRawBlockPosition) &&
@@ -277,7 +286,18 @@ public class Func_Swap : MonoBehaviour
         //StartCoroutine(Co_WaitGetScore(matchList, matchList2));
         //스왑후 정보 게임 매니저에 넘기기
         List<int[]> newList = SumMatchedList(matchList.matchedBlockPostion, matchList2.matchedBlockPostion);
-        StartCoroutine(Co_SendToGameManage(newList));
+        List<int[]> munPos = new List<int[]>();
+
+        if (matchList.isMunchkin == true)
+            munPos.Add(matchList.munchkinBlockPos);
+        if (matchList2.isMunchkin == true)
+            munPos.Add(matchList2.munchkinBlockPos);
+
+        StartCoroutine(Co_SendToGameManage(newList, munPos));
+    }
+    public void SwapMunchkin(Block block, Direction dir)
+    {
+        StartCoroutine(Co_MoveMunchkin(block, dir));
     }
     private List<int[]> SumMatchedList(List<int[]> list1, List<int[]> list2)
     {
@@ -293,11 +313,14 @@ public class Func_Swap : MonoBehaviour
 
         return sumList;
     }
-    public void AutoSwapBlock(Block[,] blocks ,int x, int y )
+    public void AutoSwapBlock(Block[,] blocks, int x, int y)
     {
-        MatchList matchList = match.FindDirectMatchBlock(blocks,x, y);
+        MatchList matchList = func_Match.FindDirectMatchBlock(blocks, x, y);
         List<int[]> newList = matchList.matchedBlockPostion;
-        StartCoroutine(Co_SendToGameManage(newList));
+        List<int[]> munPos = new List<int[]>();
+        if (matchList.isMunchkin == true)
+            munPos.Add(matchList.munchkinBlockPos);
+        StartCoroutine(Co_SendToGameManage(newList, munPos));
     }
     IEnumerator Co_SwapBlockPos(GameObject block1, GameObject block2)
     {
@@ -328,9 +351,43 @@ public class Func_Swap : MonoBehaviour
         moving = true;
         StartCoroutine(Co_SwapBlockPos(blocks[starPos.y, starPos.x].gameObject, blocks[endPos.y, endPos.x].gameObject));
     }
-    IEnumerator Co_SendToGameManage(List<int[]> newList)
+    IEnumerator Co_SendToGameManage(List<int[]> newList, List<int[]> munPos)
     {
         yield return new WaitUntil(() => moving == false);
-        GameManager.Instance.SendSwapInfo(blocks, newList);
+        GameManager.Instance.SendSwapInfo(blocks, newList, munPos);
+    }
+    IEnumerator Co_MoveMunchkin(Block block, Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.Left:
+                block.ismoving = true;
+                Debug.Log("먼치킨 이동중");
+                block.MoveMuchkin(-4, (int)block.gameObject.transform.position.y);
+                yield return new WaitUntil(() => block.ismoving == false);
+                Debug.Log("먼치킨 이동완료");
+                break;
+            case Direction.Right:
+                block.ismoving = true;
+                block.MoveMuchkin(4, (int)block.gameObject.transform.position.y);
+                yield return new WaitUntil(() => block.ismoving == false);
+                break;
+            case Direction.Up:
+                block.ismoving = true;
+                block.MoveMuchkin((int)block.gameObject.transform.position.x, 4);
+                yield return new WaitUntil(() => block.ismoving == false);
+                break;
+            case Direction.Down:
+                block.ismoving = true;
+                block.MoveMuchkin((int)block.gameObject.transform.position.x, -4);
+                yield return new WaitUntil(() => block.ismoving == false);
+                break;
+        }
+        List<int[]> temp = new List<int[]>();
+        List<int[]> nullList = new List<int[]>();
+        temp = func_Match.HitFromMunchkin(block, dir);
+        GameManager.Instance.SendSwapInfo(blocks, temp, nullList);
+        canTouch = true;
+
     }
 }

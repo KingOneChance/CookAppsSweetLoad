@@ -9,6 +9,8 @@ public class MatchList
     public List<int[]> sameColumnBlockPosition = new List<int[]>();
     public List<int[]> tempColumnBlockPosition = new List<int[]>();
     public List<int[]> matchedBlockPostion = new List<int[]>();
+    public int[] munchkinBlockPos = new int[2];
+    public bool isMunchkin = false;
 }
 
 public class Func_Match : MonoBehaviour
@@ -87,13 +89,21 @@ public class Func_Match : MonoBehaviour
         matchList.sameRawBlockPosition = sameRawBlockPos;
         matchList.tempRawBlockPosition = TempRawBlockPos;
 
-        //가로세로 동시에 터져야 하는 경우 하나에서 빼줘야함\
-        if(sameColumnBlockPos.Count>2 && sameRawBlockPos.Count>2)
-            sameRawBlockPos.Remove(startPos);
+        //먼치킨 블럭이 될 수 있는지 판별
+        for (int i = 0; i < TempColumnBlockPos.Count; i++) //완전 탐색하기 
+        {
+            for (int j = 0; j < TempRawBlockPos.Count; j++)
+            {
+                if ((TempColumnBlockPos[i][0] == TempRawBlockPos[j][0]) &&
+                    (TempColumnBlockPos[i][1] == TempRawBlockPos[j][1]))
+                {
+                    matchList.munchkinBlockPos = startPos;
+                    matchList.isMunchkin = true;
+                }
+            }
+        }
 
         FindMatchedBlock(blocks, matchList);
-
-
         return matchList;
     }
     //가로 탐색 왼쪽
@@ -102,6 +112,7 @@ public class Func_Match : MonoBehaviour
         //왼쪽진행
         if (block[startPos[1], startPos[0] - idx] != null)
         {
+            //  Debug.Log("시작 좌표"  + startPos[0] + ", "+ startPos[1]  );
             if (block[startPos[1], startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
             {
                 sameLine.Add(new int[] { startPos[0] - idx, startPos[1] });
@@ -227,50 +238,175 @@ public class Func_Match : MonoBehaviour
     //매치된 블럭들 담아주기, 터트릴 블럭들
     public void FindMatchedBlock(Block[,] blocks, MatchList matchList)
     {
-        if (matchList.sameRawBlockPosition.Count > 2)
+        //가로만 터질 때
+        if (matchList.sameRawBlockPosition.Count > 2 && matchList.sameColumnBlockPosition.Count < 2)
         {
-            //시작 위치가 2번 적용되므로 리스트 하나는 1부터 시작.
             for (int i = 0; i < matchList.sameRawBlockPosition.Count; i++)
             {
-                matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
+                //매치된 블럭 목록안에 중복 포함이 되는지 체크
+                if (CheckContained(matchList.matchedBlockPostion, matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1]) == false)
+                    matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
             }
         }
-        if (matchList.sameColumnBlockPosition.Count > 2)
+        //가로만 터질 때 세로만 터질때, 
+        else if (matchList.sameColumnBlockPosition.Count > 2 && matchList.sameRawBlockPosition.Count < 2)
         {
             for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
             {
-                matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
+                //매치된 블럭 목록안에 중복 포함이 되는지 체크
+                if (CheckContained(matchList.matchedBlockPostion, matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1]) == false)
+                    matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
             }
         }
+        //먼치킨 계산 로직 
+        else if (matchList.sameColumnBlockPosition.Count >= 2 && matchList.sameRawBlockPosition.Count >= 2)
+        {
+            //가로세로 함께 터질때,
+            if ((matchList.sameColumnBlockPosition.Count > 2 && matchList.sameRawBlockPosition.Count > 2))
+            {
+                if (matchList.isMunchkin == true) matchList.matchedBlockPostion.Add(matchList.tempColumnBlockPosition[0]);
+                //시작 위치가 2번 적용되므로 리스트 하나는 1부터 시작. (하는  로직을 넣어한다. )
+                for (int i = 1; i < matchList.sameRawBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
+                }
+                for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
+                }
+            }
+            //2X2만 터질때 
+            else if (matchList.sameRawBlockPosition.Count == 2 && matchList.sameColumnBlockPosition.Count == 2)
+            {
+                if (matchList.isMunchkin == true)
+                {
+                    if (matchList.isMunchkin == true) matchList.matchedBlockPostion.Add(matchList.tempColumnBlockPosition[0]);
+
+                    for (int i = 1; i < matchList.sameRawBlockPosition.Count; i++)
+                    {
+                        if (CheckContained(matchList.matchedBlockPostion, matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1]) == false)
+                            matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
+                    }
+                    for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
+                    {
+                        if (CheckContained(matchList.matchedBlockPostion, matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1]) == false)
+                            matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
+                    }
+                }
+            }
+            //한쪽만 3 이상 일때 
+            else if (matchList.sameRawBlockPosition.Count > 2 && matchList.sameColumnBlockPosition.Count == 2)
+            {
+                if (matchList.isMunchkin == true) matchList.matchedBlockPostion.Add(matchList.tempColumnBlockPosition[0]);
+                for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
+                }
+                for (int i = 0; i < matchList.sameRawBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
+                }
+            }
+            //한쪽만 3 이상 일때 
+            else if (matchList.sameRawBlockPosition.Count == 2 && matchList.sameColumnBlockPosition.Count > 2)
+            {
+                if (matchList.isMunchkin == true) matchList.matchedBlockPostion.Add(matchList.tempColumnBlockPosition[0]);
+                for (int i = 0; i < matchList.sameColumnBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameColumnBlockPosition[i][0], matchList.sameColumnBlockPosition[i][1] });
+                }
+                for (int i = 0; i < matchList.sameRawBlockPosition.Count; i++)
+                {
+                    if (CheckContained(matchList.matchedBlockPostion, matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1]) == false)
+                        matchList.matchedBlockPostion.Add(new int[] { matchList.sameRawBlockPosition[i][0], matchList.sameRawBlockPosition[i][1] });
+                }
+            }
+        }
+
         //특수 조건 블럭들 담기 
     }
     //자동 매치 기능
-    public void AutoMatchblock(Block[,] blocks)
+    public MatchList AutoMatchblock(Block[,] blocks, int x, int y)
     {
         List<int[]> sameRawBlockPos = new List<int[]>();
         List<int[]> TempRawBlockPos = new List<int[]>();
         List<int[]> sameColumnBlockPos = new List<int[]>();
         List<int[]> TempColumnBlockPos = new List<int[]>();
         MatchList matchList = new MatchList();
-        // 0 은 x 1은 y
-        int[] startPos = new int[] {};
-        for (int i = 1; i < 8; i++)
-        {
-            for(int j = 1; j < 8; j++)
-            {
-                startPos[0] = j;
-                startPos[1] = i;
-                FIndLeftRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
-                FIndRightRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
-                FIndUpColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
-                FIndDownColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
-            }
-        }
+        int[] startPos = { x, y };
+
+        sameRawBlockPos.Add(startPos);
+        sameColumnBlockPos.Add(startPos);
+
+        FIndLeftRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
+        FIndRightRawDFS(blocks, sameRawBlockPos, TempColumnBlockPos, startPos, 1);
+        FIndUpColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
+        FIndDownColumnDFS(blocks, sameColumnBlockPos, TempRawBlockPos, startPos, 1);
         matchList.sameColumnBlockPosition = sameColumnBlockPos;
         matchList.tempColumnBlockPosition = TempColumnBlockPos;
         matchList.sameRawBlockPosition = sameRawBlockPos;
         matchList.tempRawBlockPosition = TempRawBlockPos;
 
+        if (sameColumnBlockPos.Count > 2 && sameRawBlockPos.Count > 2)
+            sameRawBlockPos.Remove(startPos);
         FindMatchedBlock(blocks, matchList);
+
+        return matchList;
+    }
+    //list<int[]> 형식의 리스트 안에 x,y값이 있는지 확인하는 함수 
+    public bool CheckContained(List<int[]> checkList, int x, int y)
+    {
+        for (int i = 0; i < checkList.Count; i++)
+        {
+            if (checkList[i][0] == x && checkList[i][1] == y)
+                return true;
+        }
+        return false;
+    }
+    //먼치킨블럭과 부딪히는 블럭 지우는 함수 
+    public List<int[]> HitFromMunchkin( Block block, Direction dir)
+    {
+        List<int[]> hitBlock = new List<int[]>();
+        switch (dir)
+        {
+            case Direction.Left:
+                for (int i = block.GetBlockPosX(); i > 0; i--)
+                {
+                    //현재 위치 부터 끝까지 블럭배열의 번호를 담음
+                    hitBlock.Add(new int[] { i, block.GetBlockPosY() });
+                }
+                block.SetBlockPos(0, block.GetBlockPosY());
+                break;
+            case Direction.Right:
+                for (int i = block.GetBlockPosX(); i < 8; i++)
+                {
+                    //현재 위치 부터 끝까지 블럭배열의 번호를 담음
+                    hitBlock.Add(new int[] { i, block.GetBlockPosY() });
+                }
+                block.SetBlockPos(8, block.GetBlockPosY());
+                break;
+            case Direction.Up:
+                for (int i = block.GetBlockPosY(); i > 0; i--)
+                {
+                    //현재 위치 부터 끝까지 블럭배열의 번호를 담음
+                    hitBlock.Add(new int[] { block.GetBlockPosX(),i });
+                }
+                block.SetBlockPos(block.GetBlockPosX(), 0);
+                break;
+            case Direction.Down:
+                for (int i = block.GetBlockPosY(); i < 8; i++)
+                {
+                    //현재 위치 부터 끝까지 블럭배열의 번호를 담음
+                    hitBlock.Add(new int[] { block.GetBlockPosX(),i });
+                }
+                block.SetBlockPos(block.GetBlockPosX(), 8);
+                break;
+        }
+        return hitBlock;
     }
 }

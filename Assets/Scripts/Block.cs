@@ -17,7 +17,7 @@ public class Block : MonoBehaviour
     [SerializeField] private int nowX;
     [SerializeField] private int nowY;
     private BlockPos blockPos = new BlockPos(); //블럭의 위치 값
-    [SerializeField] public bool ismoving { get; set; } //코루틴 중복 막기
+    [field: SerializeField] public bool ismoving { get; set; } //코루틴 중복 막기
     private void Awake()
     {
 
@@ -44,6 +44,10 @@ public class Block : MonoBehaviour
             case BlockColor.Yellow:
                 mySpriteRenderer.color = Color.yellow;
                 this.blockColor = BlockColor.Yellow;
+                break;
+            case BlockColor.MunChKin:
+                mySpriteRenderer.color =Color.white;
+                this.blockColor = BlockColor.MunChKin;
                 break;
             case BlockColor.Clear:
                 mySpriteRenderer.color = Color.clear;
@@ -73,6 +77,7 @@ public class Block : MonoBehaviour
                 mySpriteRenderer.color = Color.yellow;
                 this.blockColor = BlockColor.Yellow;
                 break;
+       
         }
     }
     public void SetBlockMode(BlockMode blockmode)
@@ -139,5 +144,36 @@ public class Block : MonoBehaviour
         blockObject.transform.position = endPos;
         yield return null;
         ismoving = false;
+    }
+
+    public void MoveMuchkin(int x, int y)
+    {
+        StartCoroutine(Co_MoveMunchkin(gameObject, x, y));
+    }
+    IEnumerator Co_MoveMunchkin(GameObject blockObject, int x, int y)
+    {
+        //시작위치와 도착위치 지정
+        Vector3 startPos = blockObject.transform.position;
+        Vector3 endPos = new Vector3(x , y, 0);
+        //지정 시간안에 도달하게 하기위한 변수 선언
+        float lerpTime = 0.5f;
+        float curTime = 0;
+
+        //lerp로 시작점과 끝점 움직인 선형보간
+        while (lerpTime >= curTime)
+        {
+            curTime += Time.deltaTime;
+            blockObject.transform.position = Vector3.Lerp(startPos, endPos, curTime / lerpTime);
+            yield return null;
+        }
+        //오브젝트 풀에 넣기 위해 블럭 모드 전환
+        SetBlockMode(BlockMode.Normal);
+        //게임 종료 로직을 위한 먼치킨 스코어값 올려주기
+        GameManager.Instance.SetMunchkinNum();
+        gameObject.transform.localScale = Vector3.one;
+        blockObject.transform.position = endPos;
+        yield return null;
+        ismoving = false;
+        
     }
 }

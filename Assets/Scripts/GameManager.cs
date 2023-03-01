@@ -28,7 +28,8 @@ public class GameManager : MonoBehaviour
     [field: SerializeField] public Func_Swap func_swap { get; set; }
 
     [SerializeField] private List<int[]> matchedList = new List<int[]>();
-    [SerializeField] private int score;
+    [SerializeField] private int score = 0;
+    [SerializeField] private int munchkinNum = 3;
 
     private void Awake()
     {
@@ -43,22 +44,26 @@ public class GameManager : MonoBehaviour
         Debug.Log("hello world");
     }
     //스왑후 정보들을 받음
-    public void SendSwapInfo(Block[,] blocks, List<int[]> matchedList)
+    public void SendSwapInfo(Block[,] blocks, List<int[]> matchedList, List<int[]> munPos)
     {
         map_infomation.SetBlccksInfo(blocks);
         this.matchedList = matchedList;
 
         //스포너에게 블록 생성 및 삭제, 점수증가 처리 시킴
         func_Spawn.SetMapBlocksInfo(blocks);
-        func_Spawn.SetMatchedList(this.matchedList);
+        func_Spawn.SetMatchedList(this.matchedList, munPos);
 
     }
     public void SetScore(int point)
     {
         score += point;
         uiManager.SetScoreOnUI(score);
-
-        if (score > 1000)
+    }
+    public void SetMunchkinNum()
+    {
+        munchkinNum--;
+        uiManager.SetMunchkinOnUI(munchkinNum);
+        if (munchkinNum == 0)
         {
             uiManager.GameOverWin();
             func_swap.gameOver = true;
