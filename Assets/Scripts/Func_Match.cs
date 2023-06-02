@@ -109,30 +109,25 @@ public class Func_Match : MonoBehaviour
     //가로 탐색 왼쪽
     private void FIndLeftRawDFS(Block[,] block, List<int[]> sameLine, List<int[]> tempLine, int[] startPos, int idx)
     {
-        //왼쪽진행
-        if (block[startPos[1], startPos[0] - idx] != null)
+        if (block[startPos[1], startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
         {
-            //  Debug.Log("시작 좌표"  + startPos[0] + ", "+ startPos[1]  );
-            if (block[startPos[1], startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
+            sameLine.Add(new int[] { startPos[0] - idx, startPos[1] });
+            //추가로 위, 아래 탐색 한 번씩만 진행, 먼치킨 블럭을 위함
+            if (block[startPos[1] + 1, startPos[0] - idx] != null)//아래
             {
-                sameLine.Add(new int[] { startPos[0] - idx, startPos[1] });
-                //추가로 위, 아래 탐색 한 번씩만 진행, 먼치킨 블럭을 위함
-                if (block[startPos[1] + 1, startPos[0] - idx] != null)//아래
+                if (block[startPos[1] + 1, startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
                 {
-                    if (block[startPos[1] + 1, startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
-                    {
-                        tempLine.Add(new int[] { startPos[0] - idx, startPos[1] + 1 });
-                    }
+                    tempLine.Add(new int[] { startPos[0] - idx, startPos[1] + 1 });
                 }
-                if (block[startPos[1] - 1, startPos[0] - idx] != null)//위
-                {
-                    if (block[startPos[1] - 1, startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
-                    {
-                        tempLine.Add(new int[] { startPos[0] - idx, startPos[1] - 1 });
-                    }
-                }
-                FIndLeftRawDFS(block, sameLine, tempLine, startPos, idx + 1);
             }
+            if (block[startPos[1] - 1, startPos[0] - idx] != null)//위
+            {
+                if (block[startPos[1] - 1, startPos[0] - idx].GetBlockColor() == block[startPos[1], startPos[0]].GetBlockColor())
+                {
+                    tempLine.Add(new int[] { startPos[0] - idx, startPos[1] - 1 });
+                }
+            }
+            FIndLeftRawDFS(block, sameLine, tempLine, startPos, idx + 1);
         }
         else return;
     }
@@ -369,7 +364,7 @@ public class Func_Match : MonoBehaviour
         return false;
     }
     //먼치킨블럭과 부딪히는 블럭 지우는 함수 
-    public List<int[]> HitFromMunchkin( Block block, Direction dir)
+    public List<int[]> HitFromMunchkin(Block block, Direction dir)
     {
         List<int[]> hitBlock = new List<int[]>();
         switch (dir)
@@ -394,7 +389,7 @@ public class Func_Match : MonoBehaviour
                 for (int i = block.GetBlockPosY(); i > 0; i--)
                 {
                     //현재 위치 부터 끝까지 블럭배열의 번호를 담음
-                    hitBlock.Add(new int[] { block.GetBlockPosX(),i });
+                    hitBlock.Add(new int[] { block.GetBlockPosX(), i });
                 }
                 block.SetBlockPos(block.GetBlockPosX(), 0);
                 break;
@@ -402,7 +397,7 @@ public class Func_Match : MonoBehaviour
                 for (int i = block.GetBlockPosY(); i < 8; i++)
                 {
                     //현재 위치 부터 끝까지 블럭배열의 번호를 담음
-                    hitBlock.Add(new int[] { block.GetBlockPosX(),i });
+                    hitBlock.Add(new int[] { block.GetBlockPosX(), i });
                 }
                 block.SetBlockPos(block.GetBlockPosX(), 8);
                 break;
